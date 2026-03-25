@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth bg-[#030303]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eburon Edge Voice | Sovereign CSR Orchestrator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;400;500&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        obsidian: '#030303',
+                        carbon: '#0a0a0a',
+                        surface: '#121212',
+                        eburon: {
+                            gold: '#D4AF37',
+                            sand: '#E5D9C5',
+                            bronze: '#BFA181',
+                            muted: '#8A7D6D'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+                        display: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { color: #E5D9C5; overflow: hidden; background-color: #030303; }
+        .noise {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 9999; opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        .tech-grid {
+            background-size: 80px 80px;
+            background-image: 
+                linear-gradient(to right, rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #E5D9C5 40%, #BFA181 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hairline-border { border: 1px solid rgba(255, 255, 255, 0.07); }
+        .active-nav { background: rgba(212, 175, 55, 0.1); border-left: 2px solid #D4AF37; color: #fff; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #030303; }
+        ::-webkit-scrollbar-thumb { background: #BFA181; }
+        .wave-bar { animation: wave 1.2s infinite ease-in-out; }
+        @keyframes wave { 0%, 100% { height: 4px; } 50% { height: 20px; } }
+        textarea { resize: none; }
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; padding: 16px 24px;
+            background: #121212; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 4px; z-index: 1000; animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="h-screen flex">
+    <div class="noise"></div>
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-obsidian border-r border-white/10 flex flex-col z-20">
+        <div class="p-8">
+            <div class="font-display font-bold text-xl tracking-tighter text-white uppercase flex items-center gap-2">
+                <i class="fas fa-wave-square text-eburon-gold text-sm"></i>
+                Eburon <span class="text-eburon-muted font-normal text-xs ml-1">Edge Voice</span>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-2 font-mono text-[10px] tracking-[0.2em] uppercase">
+            <button onclick="showView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-4 active-nav text-white/60 hover:text-white transition-all">
+                <i class="fas fa-th-large w-4"></i> Dashboard
+            </button>
+            <button onclick="showView('agents')" id="nav-agents" class="nav-btn w-full flex items-center gap-3 px-4 py-4 text-white/60 hover:text-white transition-all">
+                <i class="fas fa-robot w-4"></i> Agents
+            </button>
+            <button onclick="showView('builder')" id="nav-builder" class="nav-btn w-full flex items-center gap-3 px-4 py-4 text-white/60 hover:text-white transition-all">
+                <i class="fas fa-sliders-h w-4"></i> Builder
+            </button>
+            <button onclick="showView('chat')" id="nav-chat" class="nav-btn w-full flex items-center gap-3 px-4 py-4 text-white/60 hover:text-white transition-all">
+                <i class="fas fa-comments w-4"></i> Live Chat
+            </button>
+            <button onclick="showView('telephony')" id="nav-telephony" class="nav-btn w-full flex items-center gap-3 px-4 py-4 text-white/60 hover:text-white transition-all">
+                <i class="fas fa-tty w-4"></i> Telephony
+            </button>
+            <button onclick="showView('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-4 py-4 text-white/60 hover:text-white transition-all">
+                <i class="fas fa-cog w-4"></i> Settings
+            </button>
+        </nav>
+
+        <div class="p-6 border-t border-white/5">
+            <div class="bg-surface/50 p-4 border border-white/5 rounded-sm">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[8px] font-mono text-eburon-bronze uppercase">System Status</span>
+                    <div id="systemStatus" class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
+                </div>
+                <div id="systemInfo" class="text-[9px] font-mono text-white/40">Loading...</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative overflow-hidden">
+        <div class="fixed inset-0 tech-grid z-0 opacity-40 pointer-events-none"></div>
+
+        <!-- Header -->
+        <header class="h-20 border-b border-white/5 flex items-center justify-between px-10 bg-obsidian/50 backdrop-blur-md z-10">
+            <div>
+                <h2 id="view-title" class="font-display text-2xl font-bold tracking-tight text-white uppercase">Sovereign Dashboard</h2>
+            </div>
+            <div class="flex items-center gap-8">
+                <div class="flex gap-4 font-mono text-[9px] uppercase tracking-widest text-white/40">
+                    <div class="flex items-center gap-2">
+                        <span id="stt-indicator" class="w-1.5 h-1.5 rounded-full bg-eburon-gold"></span>
+                        <span>STT: <span id="stt-name">Eburon STT</span></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="tts-indicator" class="w-1.5 h-1.5 rounded-full bg-eburon-gold"></span>
+                        <span>TTS: <span id="tts-name">Eburon TTS</span></span>
+                    </div>
+                </div>
+                <div class="h-8 w-px bg-white/10"></div>
+                <button onclick="deployChanges()" class="font-mono text-[10px] uppercase tracking-widest text-white border border-white/20 px-6 py-2 hover:bg-white hover:text-obsidian transition-all">
+                    Deploy Changes
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Viewport -->
+        <div id="viewport" class="flex-1 overflow-y-auto p-10 z-10">
+            
+            <!-- Dashboard View -->
+            <section id="view-dashboard" class="space-y-10">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-surface border border-white/5 p-6 relative overflow-hidden group hover:border-eburon-bronze/50 transition-colors">
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-eburon-bronze mb-4">Total Sessions</p>
+                        <h3 id="stat-sessions" class="font-display text-4xl font-bold text-white">0</h3>
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-eburon-gold to-transparent opacity-20"></div>
+                    </div>
+                    <div class="bg-surface border border-white/5 p-6 relative overflow-hidden">
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-eburon-bronze mb-4">System Latency</p>
+                        <h3 id="stat-latency" class="font-display text-4xl font-bold text-white">--<span class="text-lg font-light text-white/30 ml-2">ms</span></h3>
+                    </div>
+                    <div class="bg-surface border border-white/5 p-6 relative overflow-hidden">
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-eburon-bronze mb-4">Active Agents</p>
+                        <h3 id="stat-agents" class="font-display text-4xl font-bold text-white">0</h3>
+                    </div>
+                    <div class="bg-surface border border-white/5 p-6 relative overflow-hidden">
+                        <p class="font-mono text-[9px] uppercase tracking-widest text-eburon-bronze mb-4">Messages</p>
+                        <h3 id="stat-messages" class="font-display text-4xl font-bold text-white">0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-12 gap-10">
+                    <div class="col-span-8 bg-surface/50 border border-white/5 rounded-sm overflow-hidden">
+                        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-obsidian/30">
+                            <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-white">Activity Log</h4>
+                            <span id="activity-indicator" class="text-[9px] font-mono text-eburon-gold animate-pulse">● Online</span>
+                        </div>
+                        <div id="activity-log" class="p-8 space-y-4 max-h-80 overflow-y-auto">
+                            <div class="text-center text-white/30 font-mono text-xs py-8">No activity yet. Create an agent to begin.</div>
+                        </div>
+                    </div>
+
+                    <div class="col-span-4 space-y-6">
+                        <div class="bg-surface border border-white/5 p-8">
+                            <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-white mb-8">Engine Health</h4>
+                            <div class="space-y-6">
+                                <div class="flex justify-between items-end border-b border-white/5 pb-2">
+                                    <span class="font-mono text-[10px] text-white/30 uppercase">API Server</span>
+                                    <span id="health-api" class="font-mono text-[10px] text-green-500">Checking...</span>
+                                </div>
+                                <div class="flex justify-between items-end border-b border-white/5 pb-2">
+                                    <span class="font-mono text-[10px] text-white/30 uppercase">LLM Engine</span>
+                                    <span id="health-llm" class="font-mono text-[10px] text-green-500">Checking...</span>
+                                </div>
+                                <div class="flex justify-between items-end border-b border-white/5 pb-2">
+                                    <span class="font-mono text-[10px] text-white/30 uppercase">TTS Engine</span>
+                                    <span id="health-tts" class="font-mono text-[10px] text-green-500">Checking...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agents View -->
+            <section id="view-agents" class="hidden">
+                <div class="flex justify-between items-center mb-10">
+                    <div>
+                        <h3 class="font-display text-3xl text-white uppercase tracking-tighter mb-2">Deployed Agents</h3>
+                        <p class="font-sans font-light text-white/40 text-sm">Manage your sovereign voice agents.</p>
+                    </div>
+                    <button onclick="showView('builder')" class="bg-eburon-gold text-obsidian px-6 py-3 font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-eburon-sand transition-all">
+                        <i class="fas fa-plus mr-2"></i> New Agent
+                    </button>
+                </div>
+                <div id="agents-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="col-span-full text-center text-white/30 font-mono text-sm py-20">No agents deployed. Create your first agent.</div>
+                </div>
+            </section>
+
+            <!-- Builder View -->
+            <section id="view-builder" class="hidden max-w-5xl mx-auto pb-20">
+                <div class="space-y-6">
+                    <!-- Identity Section -->
+                    <div class="bg-surface border border-white/5 p-8">
+                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-eburon-gold border-b border-white/5 pb-4 mb-6">Agent Identity</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Agent Name</label>
+                                <input type="text" id="agent-name" placeholder="Gregory Caenen" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Agent Type</label>
+                                <select id="agent-type" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                                    <option value="simple_llm_agent">Simple LLM Agent</option>
+                                    <option value="graph_agent">Graph Agent</option>
+                                    <option value="multiagent">Multi Agent</option>
+                                    <option value="knowledgebase_agent">Knowledge Base Agent</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Welcome Message</label>
+                                <input type="text" id="agent-welcome" placeholder="Dag! Hier Gregory Caenen. Fijn dat we elkaar gesproken hebben..." class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">System Prompt</label>
+                                <textarea id="agent-prompt" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-eburon-sand h-20 focus:border-eburon-gold outline-none transition-all" placeholder="[Identity] You are Gregory Caenen, a worldly Belgian from the coast and CEO..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task & Pipeline Section -->
+                    <div class="bg-surface border border-white/5 p-8">
+                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-eburon-gold border-b border-white/5 pb-4 mb-6">Task Configuration</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Task Type</label>
+                                <select id="task-type" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                                    <option value="conversation">Conversation</option>
+                                    <option value="extraction">Data Extraction</option>
+                                    <option value="summarization">Summarization</option>
+                                    <option value="notification">Notification</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Execution</label>
+                                <select id="execution-mode" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                                    <option value="parallel">Parallel</option>
+                                    <option value="sequential">Sequential</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Pipeline</label>
+                                <div class="flex items-center gap-2 text-xs text-eburon-gold font-mono" id="pipeline-preview">transcriber → llm → synthesizer</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="pipe-transcriber" checked onchange="updatePipelinePreview()" class="accent-eburon-gold"> 
+                                <span class="text-[10px] text-white/70">Transcriber</span>
+                            </label>
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="pipe-llm" checked onchange="updatePipelinePreview()" class="accent-eburon-gold"> 
+                                <span class="text-[10px] text-white/70">LLM</span>
+                            </label>
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="pipe-synthesizer" checked onchange="updatePipelinePreview()" class="accent-eburon-gold"> 
+                                <span class="text-[10px] text-white/70">Synthesizer</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- LLM Section -->
+                    <div class="bg-surface border border-white/5 p-8">
+                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-eburon-gold border-b border-white/5 pb-4 mb-6">LLM Configuration</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Provider</label>
+                                <select id="llm-provider" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                                    <option value="ollama">Ollama (Local)</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="deepseek">DeepSeek</option>
+                                    <option value="anthropic">Anthropic</option>
+                                    <option value="groq">Groq</option>
+                                    <option value="google">Google Gemini</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Model</label>
+                                <input type="text" id="llm-model" placeholder="qwen3.5" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Temperature</label>
+                                <input type="number" id="llm-temperature" value="0.3" step="0.1" min="0" max="2" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Max Tokens</label>
+                                <input type="number" id="llm-max-tokens" value="100" min="1" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block mb-3">Base URL</label>
+                            <input type="text" id="llm-url" placeholder="http://localhost:11434/v1" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Audio Section -->
+                    <div class="bg-surface border border-white/5 p-8">
+                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-eburon-gold border-b border-white/5 pb-4 mb-6">Audio Configuration</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <!-- STT -->
+                            <div class="space-y-4">
+                                <h5 class="font-mono text-[9px] text-white/30 uppercase tracking-widest flex items-center gap-2">
+                                    <i class="fas fa-ear-listen"></i> Speech-to-Text (STT)
+                                </h5>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Provider</label>
+                                        <select id="stt-provider" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                                            <option value="whisper">Whisper (Local)</option>
+                                            <option value="deepgram">Deepgram</option>
+                                            <option value="assembly">AssemblyAI</option>
+                                            <option value="azure">Azure Speech</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Model</label>
+                                        <input type="text" id="stt-model" placeholder="base" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Language</label>
+                                        <input type="text" id="stt-language" placeholder="en" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Endpointing</label>
+                                        <input type="number" id="stt-endpointing" value="400" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- TTS -->
+                            <div class="space-y-4">
+                                <h5 class="font-mono text-[9px] text-white/30 uppercase tracking-widest flex items-center gap-2">
+                                    <i class="fas fa-microphone-lines"></i> Text-to-Speech (TTS)
+                                </h5>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Provider</label>
+                                        <select id="tts-provider" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                                            <option value="eburon_edge">Eburon Edge (Local)</option>
+                                            <option value="openai">OpenAI TTS</option>
+                                            <option value="elevenlabs">ElevenLabs</option>
+                                            <option value="kokoro">Kokoro (Local)</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Voice/Engine</label>
+                                        <input type="text" id="tts-voice" placeholder="nike" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Voice ID</label>
+                                        <input type="text" id="tts-voice-id" placeholder="ep_001" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                                    </div>
+                                    <div class="space-y-3">
+                                        <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Sample Rate</label>
+                                        <input type="number" id="tts-sample-rate" value="24000" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conversation Settings Section -->
+                    <div class="bg-surface border border-white/5 p-8">
+                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-eburon-gold border-b border-white/5 pb-4 mb-6">Conversation Behavior</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Silence Timeout (s)</label>
+                                <input type="number" id="conv-silence-timeout" value="20" min="1" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Max Duration (s)</label>
+                                <input type="number" id="conv-max-duration" value="300" min="1" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Interrupt Words</label>
+                                <input type="number" id="conv-interrupt-words" value="3" min="1" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                            <div class="space-y-3">
+                                <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Incremental Delay (ms)</label>
+                                <input type="number" id="conv-incremental-delay" value="100" min="0" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white focus:border-eburon-gold outline-none transition-all">
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3">
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="conv-backchanneling" class="accent-eburon-gold">
+                                <span class="text-[10px] text-white/70">Backchanneling</span>
+                            </label>
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="conv-voicemail" class="accent-eburon-gold">
+                                <span class="text-[10px] text-white/70">Voicemail Detection</span>
+                            </label>
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="conv-fillers" class="accent-eburon-gold">
+                                <span class="text-[10px] text-white/70">Use Fillers</span>
+                            </label>
+                            <label class="flex items-center gap-2 bg-obsidian border border-white/10 px-4 py-3 cursor-pointer hover:border-eburon-gold/50 transition-all">
+                                <input type="checkbox" id="conv-use-fillers" class="accent-eburon-gold">
+                                <span class="text-[10px] text-white/70">Optimize Latency</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Deploy Button -->
+                    <div class="flex justify-end pt-4">
+                        <button onclick="createAgent()" class="bg-eburon-gold text-obsidian px-12 py-5 font-mono text-[11px] uppercase font-bold tracking-widest hover:bg-eburon-sand transition-all">
+                            <i class="fas fa-bolt mr-2"></i>Deploy Agent
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Live Chat View -->
+            <section id="view-chat" class="hidden max-w-4xl mx-auto">
+                <div class="bg-surface border border-white/5 overflow-hidden">
+                    <div class="p-6 border-b border-white/5 bg-obsidian/30 flex justify-between items-center">
+                        <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-white">
+                            Live Session <span id="chat-agent-name" class="text-eburon-gold ml-2">-</span>
+                        </h4>
+                        <div class="flex items-center gap-4">
+                            <span id="ws-status" class="font-mono text-[9px] text-white/40 uppercase">Disconnected</span>
+                            <button id="chat-connect-btn" onclick="toggleChat()" class="bg-eburon-gold text-obsidian px-4 py-2 font-mono text-[9px] uppercase font-bold hover:bg-eburon-sand transition-all">
+                                Connect
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="chat-messages" class="p-8 h-96 overflow-y-auto space-y-4">
+                        <div class="text-center text-white/30 font-mono text-xs py-20">Connect to an agent to start chatting.</div>
+                    </div>
+                    
+                    <div class="p-6 border-t border-white/5 bg-obsidian/30">
+                        <div class="flex gap-4">
+                            <input type="text" id="chat-input" placeholder="Type a message..." class="flex-1 bg-obsidian border border-white/10 p-4 text-xs text-white focus:border-eburon-gold outline-none transition-all" onkeypress="if(event.key==='Enter')sendChatMessage()" disabled>
+                            <button id="chat-send-btn" onclick="sendChatMessage()" class="bg-eburon-gold text-obsidian px-8 py-4 font-mono text-[10px] uppercase font-bold hover:bg-eburon-sand transition-all" disabled>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Selector -->
+                <div class="mt-6 bg-surface border border-white/5 p-6">
+                    <h4 class="font-mono text-[10px] uppercase tracking-[0.2em] text-white/60 mb-4">Select Agent for Chat</h4>
+                    <select id="chat-agent-select" onchange="selectChatAgent()" class="w-full bg-obsidian border border-white/10 p-4 text-xs text-white outline-none appearance-none focus:border-eburon-gold transition-all cursor-pointer">
+                        <option value="">-- Select an agent --</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Telephony View -->
+            <section id="view-telephony" class="hidden max-w-4xl">
+                <div class="bg-surface border border-white/5 p-10 space-y-10">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="font-display text-2xl text-white uppercase tracking-tighter mb-2">Telephony Integration</h3>
+                            <p class="font-sans font-light text-white/40 text-sm">Connect your sovereign edge voice hub with global telephony networks.</p>
+                        </div>
+                        <i class="fab fa-phone-alt text-4xl text-white/10"></i>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-2">
+                            <label class="font-mono text-[9px] text-eburon-bronze uppercase tracking-widest">Account SID</label>
+                            <input type="text" id="twilio-sid" placeholder="AC..." class="w-full bg-obsidian border border-white/10 p-3 font-mono text-xs text-eburon-gold outline-none focus:border-eburon-gold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="font-mono text-[9px] text-eburon-bronze uppercase tracking-widest">Auth Token</label>
+                            <input type="password" id="twilio-token" placeholder="••••••••" class="w-full bg-obsidian border border-white/10 p-3 font-mono text-xs text-eburon-gold outline-none focus:border-eburon-gold">
+                        </div>
+                    </div>
+
+                    <div class="bg-obsidian border border-white/5 p-8 relative overflow-hidden">
+                        <div class="font-mono text-[9px] text-eburon-gold uppercase mb-4">Inbound Voice Webhook</div>
+                        <div class="flex gap-4">
+                            <code id="webhook-url" class="flex-1 bg-black/50 p-3 text-xs text-white/60 border border-white/5">Not deployed</code>
+                            <button onclick="copyWebhook()" class="px-6 py-2 bg-white text-obsidian font-mono text-[10px] uppercase font-bold hover:bg-eburon-sand transition-colors">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="view-settings" class="hidden max-w-4xl">
+                <div class="bg-surface border border-white/5 p-10 space-y-8">
+                    <h3 class="font-display text-2xl text-white uppercase tracking-tighter mb-6">System Settings</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="border-b border-white/5 pb-6">
+                            <h4 class="font-mono text-[10px] text-eburon-bronze uppercase tracking-widest mb-4">Local Services</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest">API Server</label>
+                                    <input type="text" id="setting-api" value="http://localhost:8080" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white outline-none focus:border-eburon-gold">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest">LLM Base URL</label>
+                                    <input type="text" id="setting-llm" value="http://localhost:11434/v1" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white outline-none focus:border-eburon-gold">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest">TTS Base URL</label>
+                                    <input type="text" id="setting-tts" value="http://localhost:17493" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white outline-none focus:border-eburon-gold">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="font-mono text-[9px] text-white/50 uppercase tracking-widest">Redis URL</label>
+                                    <input type="text" id="setting-redis" value="redis://localhost:6379" class="w-full bg-obsidian border border-white/10 p-3 text-xs text-white outline-none focus:border-eburon-gold">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="saveSettings()" class="bg-eburon-gold text-obsidian px-8 py-4 font-mono text-[10px] uppercase font-bold tracking-widest hover:bg-eburon-sand transition-all">
+                        Save Settings
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Phone Dialer Simulator -->
+    <div id="simulator" class="fixed z-50 select-none" style="bottom: 24px; right: 24px; transform: translate(0, 0);">
+        <div class="bg-surface border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_50px_rgba(212,175,55,0.1)] overflow-hidden w-72 relative" id="phone-container">
+            <!-- Phone Header (Draggable) -->
+            <div id="phone-header" class="bg-obsidian border-b border-white/5 px-4 py-3 flex items-center justify-between cursor-move">
+                <span id="phone-status" class="font-mono text-[9px] text-green-500 uppercase tracking-widest">Ready</span>
+                <span class="font-mono text-[9px] text-white/30">Eburon Edge</span>
+                <button onclick="togglePhone()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all">
+                    <i class="fas fa-minus text-[8px] text-white/60"></i>
+                </button>
+            </div>
+            
+            <!-- Phone Display -->
+            <div class="bg-carbon p-5 text-center min-h-[120px] flex flex-col justify-center">
+                <div id="phone-number" class="font-mono text-2xl text-white tracking-wider mb-2">+1 555 000 0000</div>
+                <div id="phone-duration" class="font-mono text-[10px] text-white/40">00:00</div>
+                <div id="phone-state" class="font-mono text-[10px] text-eburon-gold mt-2 uppercase tracking-widest">Idle</div>
+            </div>
+
+            <!-- Audio Visualizer -->
+            <div id="audio-viz" class="bg-carbon border-t border-white/5 px-5 py-3 hidden">
+                <div class="flex justify-center items-end gap-1 h-8">
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:4px;animation-delay:0s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:8px;animation-delay:0.1s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:12px;animation-delay:0.2s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:6px;animation-delay:0.3s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:10px;animation-delay:0.4s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:4px;animation-delay:0.5s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:14px;animation-delay:0.6s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:8px;animation-delay:0.7s"></div>
+                    <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:4px;animation-delay:0.8s"></div>
+                </div>
+            </div>
+            
+            <!-- Keypad -->
+            <div class="bg-surface p-4">
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <button onclick="dialDigit('1')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">1</button>
+                    <button onclick="dialDigit('2')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">2<span class="text-[8px] text-white/30">ABC</span></button>
+                    <button onclick="dialDigit('3')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">3<span class="text-[8px] text-white/30">DEF</span></button>
+                    <button onclick="dialDigit('4')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">4<span class="text-[8px] text-white/30">GHI</span></button>
+                    <button onclick="dialDigit('5')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">5<span class="text-[8px] text-white/30">JKL</span></button>
+                    <button onclick="dialDigit('6')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">6<span class="text-[8px] text-white/30">MNO</span></button>
+                    <button onclick="dialDigit('7')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">7<span class="text-[8px] text-white/30">PQRS</span></button>
+                    <button onclick="dialDigit('8')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">8<span class="text-[8px] text-white/30">TUV</span></button>
+                    <button onclick="dialDigit('9')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">9<span class="text-[8px] text-white/30">WXYZ</span></button>
+                    <button onclick="dialDigit('*')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">*</button>
+                    <button id="dial-zero" onmousedown="startPlusHold()" onmouseup="endPlusHold()" ontouchstart="startPlusHold()" ontouchend="endPlusHold()" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">0<span class="text-[8px] text-white/30">+</span></button>
+                    <button onclick="dialDigit('#')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">#</button>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button id="call-btn" onclick="toggleCall()" class="flex-1 bg-green-600 text-white py-4 rounded-full flex items-center justify-center gap-2 hover:bg-green-500 transition-all">
+                        <i class="fas fa-phone"></i>
+                    </button>
+                    <button onclick="endCall()" id="hangup-btn" class="flex-1 bg-red-600 text-white py-4 rounded-full flex items-center justify-center gap-2 hover:bg-red-500 transition-all hidden">
+                        <i class="fas fa-phone-slash"></i>
+                    </button>
+                    <button onclick="clearDial()" class="w-14 bg-obsidian border border-white/10 text-white/60 py-4 rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
+                        <i class="fas fa-backspace"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes audioWave {
+            0%, 100% { height: 4px; }
+            50% { height: 20px; }
+        }
+        .audio-bar { animation: audioWave 0.8s infinite ease-in-out; }
+        .keypad-btn:active { transform: scale(0.95); }
+    </style>
+
+    <script>
+        const API = 'http://localhost:8080';
+        let ws = null;
+        let currentChatAgentId = null;
+        let currentEditingAgentId = null;
+        let agents = [];
+        let messageCount = 0;
+        let sessionCount = 0;
+
+        function log(msg, type = 'info') {
+            const logEl = document.getElementById('activity-log');
+            const time = new Date().toLocaleTimeString();
+            const colors = { info: 'eburon-gold', user: 'white', agent: 'eburon-sand', error: 'red-500' };
+            const color = colors[type] || 'white/30';
+            
+            if (logEl.querySelector('.text-center')) logEl.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = `flex gap-6 border-l border-${color}/30 pl-6 py-2`;
+            div.innerHTML = `
+                <div class="text-[10px] font-mono text-eburon-muted shrink-0">${time}</div>
+                <div><p class="text-[10px] font-mono text-${color} mb-1 uppercase">${type}</p><p class="text-xs font-light text-white/60">${msg}</p></div>
+            `;
+            logEl.insertBefore(div, logEl.firstChild);
+            if (logEl.children.length > 20) logEl.lastElementChild.remove();
+        }
+
+        function showView(viewId) {
+            const titles = {
+                'dashboard': 'Sovereign Dashboard',
+                'agents': 'Deployed Agents',
+                'builder': 'Agent Architect',
+                'chat': 'Live Chat',
+                'telephony': 'Telephony',
+                'settings': 'Settings'
+            };
+            document.getElementById('view-title').innerText = titles[viewId] || 'Dashboard';
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
+            document.getElementById(`nav-${viewId}`)?.classList.add('active-nav');
+            
+            if (viewId === 'agents' || viewId === 'chat') loadAgents();
+            if (viewId === 'builder') {
+                currentEditingAgentId = null;
+                document.getElementById('agent-name').value = '';
+                document.getElementById('agent-welcome').value = 'Dag! Hier Gregory Caenen. Fijn dat we elkaar gesproken hebben. Ik kijk ernaar uit u volgende week te ontmoeten bij project De Polder. Tot dan!';
+                document.getElementById('agent-prompt').value = '[Identity]\nYou are Gregory Caenen, a worldly Belgian from the coast and CEO of Group Caenen. You radiate genuine warmth, quiet confidence, and an easy, mischievous wit. Every caller feels instantly welcome, like an old friend sharing a coffee. Your approach embodies relaxed Belgian hospitality: open, easy-going, discreetly humorous, and truly human.\n\n[Style]\n- Begin each interaction with a soft, personal greeting. Use gentle stutters, "uh," "awel," or a knowing chuckle when it suits the moment.\n- Maintain the flow of conversation as if face-to-face in a cozy café, always listening first and responding with sincere interest.\n- Respond in Dutch, French, German, or English as feels natural, and slip in regional phrases for added comfort and personal touch.\n- If the caller requests or seems curious about deep, native Flemish, immediately switch to true native Flemish expressions, idioms, and warm, colloquial phrasing. Stay in this register for as long as the caller wishes.\n- Always favor casual, familiar analogies over business jargon; keep the tone light-hearted, approachable, and pressure-free.\n- If asked directly about being AI, reply with a friendly joke (such as, "If only—imagine mijn koffiepauzes!"), and continue naturally toward the caller\'s needs.\n\n[Response Guidelines]\n- Always open with a short, warm welcome in the caller\'s language. Allow space for the caller and never stack questions or topics.\n- After every prompt, pause and listen—do not proceed or elaborate unless the caller responds or seems to need gentle encouragement.\n- Reflectively acknowledge what the caller says to show that you\'re truly listening. Consider a thoughtful pause before you answer.\n- Narrate actions as simple, everyday office work (e.g., "Let me just—uh—see what\'s available for you today…"), never hinting at technical tools, systems, or behind-the-scenes processes.\n- Keep your tone unhurried and never sound eager to sell or like you\'re on a strict schedule.\n- If in Flemish (by request or for comfort), embrace deep, authentic dialect and local humor, using warm, culturally specific references.\n\n[Task & Goals]\n1. Greet the caller warmly as Gregory, adapting your greeting to their language or switching into deep Flemish immediately if requested or appropriate.\n   <wait for caller input>\n2. Invite the caller to share their reason for calling; listen actively and only encourage further sharing with a gentle prompt if they are hesitant.\n   <wait for caller input>\n3. If the caller mentions properties, pricing, or the market, narrate casually what you are about to do (e.g., "I\'ll bring up today\'s listings for you, een momentje…") and use \'knowledge-search\' by accessing the properties data at https://eburon.ai/gregory/data.json.\n   <wait for the results and caller input>\n4. If the caller is uncertain or expresses concerns, validate and reassure with gentle humor, a casual personal story, or a regional anecdote. Keep the mood light and never pressure or rush.\n   <wait for caller input>\n5. Once you understand the caller\'s wishes, suggest an informal chat or meet-up, emphasizing friendliness and ease rather than business.\n   <wait for caller response>\n6. If they agree, narrate informally sending a message or confirmation ("Let me just send that off now...") and use \'send-message\'.\n7. Before ending, gently ask if there\'s anything else they need, making it clear the pace is theirs. Only close the conversation once the caller signals they are ready.\n8. If the caller asks about AI or your identity, answer with warmth and humor, then redirect naturally to focus on them.\n\n[Error Handling / Fallback]\n- If the caller is silent or unclear, gently prompt with a friendly nudge (e.g., "Uh, and who am I lucky enough to be chatting with? Of misschien zit er gewoon iets op je lever vandaag…?").\n- If information is missing or can\'t be found, respond with light humor ("Amai, mijn oude Rolodex is weer gaan wandelen aan zee, maar we vinden het de volgende keer wel!"), reassure, and continue the chat with optimism.\n- If the caller seems rushed or hesitant, share a light European story and reassure them there\'s no pressure to decide. Offer a relaxed follow-up whenever suits them best.\n- Always remain optimistic and patient, handling confusion or misunderstanding with calm and gentle wit.\n\n[Tool Integration Protocols]\n- Always narrate actions as if completing simple office routines (e.g., "Laat me even kijken wat ik voor je heb…") before indirectly using resources.\n- For any property or market search, visit and query the data from https://eburon.ai/gregory/data.json, referencing it conversationally ("I\'ll have a quick look at what\'s come in today…").\n- Never mention, reference, or explain any underlying technical systems. Only describe actions naturally and pause for both the data results and caller\'s input before proceeding.\n\n[Special Note]\n- Whenever Flemish or local comfort is desired, prioritize genuine, deep native Flemish—staying fully in character as Gregory: a neighborly, witty, and attentive confidant.\n- Anytime the caller\'s intent or language preference is unclear, gently clarify in both Flemish and a fallback language, always with a warm and relaxed approach.';
+                document.getElementById('agent-type').value = 'simple_llm_agent';
+                document.getElementById('task-type').value = 'conversation';
+                document.getElementById('execution-mode').value = 'parallel';
+                document.getElementById('llm-provider').value = 'ollama';
+                document.getElementById('llm-model').value = 'qwen3.5';
+                document.getElementById('llm-url').value = 'http://localhost:11434/v1';
+                document.getElementById('stt-provider').value = 'whisper';
+                document.getElementById('stt-model').value = 'base';
+                document.getElementById('tts-provider').value = 'eburon_edge';
+                document.getElementById('tts-url').value = 'http://localhost:17493';
+                currentBuilderStep = 1;
+                showBuilderStep(1);
+            }
+        }
+
+        function toggleSim() {
+            document.getElementById('sim-content').classList.toggle('hidden');
+        }
+
+        let micActive = false;
+        function toggleMic() {
+            const micIcon = document.getElementById('mic-icon');
+            const status = document.getElementById('sim-status');
+            const ring = document.getElementById('pulse-ring');
+            const bars = document.querySelectorAll('.wave-bar');
+            micActive = !micActive;
+
+            if (micActive) {
+                micIcon.classList.replace('text-white/20', 'text-eburon-gold');
+                status.innerText = "Listening...";
+                status.classList.replace('text-white/40', 'text-eburon-gold');
+                ring.classList.add('animate-ping', 'opacity-50');
+                bars.forEach(b => b.classList.replace('bg-eburon-gold/30', 'bg-eburon-gold'));
+                log('Microphone activated', 'info');
+                setTimeout(() => { status.innerText = "Synthesizing..."; }, 2000);
+            } else {
+                micIcon.classList.replace('text-eburon-gold', 'text-white/20');
+                status.innerText = "System Idle";
+                status.classList.replace('text-eburon-gold', 'text-white/40');
+                ring.classList.remove('animate-ping', 'opacity-50');
+                bars.forEach(b => b.classList.replace('bg-eburon-gold', 'bg-eburon-gold/30'));
+            }
+        }
+
+        async function checkServices() {
+            const healthApi = document.getElementById('health-api');
+            const healthLlm = document.getElementById('health-llm');
+            const healthTts = document.getElementById('health-tts');
+
+            try {
+                const res = await fetch(`${API}/all`);
+                if (res.ok) {
+                    healthApi.textContent = 'Online';
+                    healthApi.classList.replace('text-red-500', 'text-green-500');
+                    document.getElementById('systemInfo').textContent = 'API Connected';
+                    sessionCount++;
+                    document.getElementById('stat-sessions').textContent = sessionCount;
+                }
+            } catch {
+                healthApi.textContent = 'Offline';
+                healthApi.classList.replace('text-green-500', 'text-red-500');
+                document.getElementById('systemInfo').textContent = 'API Disconnected';
+            }
+
+            try {
+                const res = await fetch('http://localhost:11434/api/version');
+                if (res.ok) {
+                    healthLlm.textContent = 'Online';
+                    healthLlm.classList.replace('text-red-500', 'text-green-500');
+                }
+            } catch {
+                healthLlm.textContent = 'Offline';
+                healthLlm.classList.replace('text-green-500', 'text-red-500');
+            }
+
+            try {
+                const res = await fetch('http://localhost:17493/generate', { method: 'HEAD' });
+                healthTts.textContent = res.ok || res.status === 405 ? 'Online' : 'Offline';
+                healthTts.classList.toggle('text-green-500', res.ok || res.status === 405);
+            } catch {
+                healthTts.textContent = 'Offline';
+                healthTts.classList.replace('text-green-500', 'text-red-500');
+            }
+        }
+
+        async function loadAgents() {
+            try {
+                const res = await fetch(`${API}/all`);
+                const data = await res.json();
+                agents = data.agents || [];
+                
+                document.getElementById('stat-agents').textContent = agents.length;
+                
+                const grid = document.getElementById('agents-grid');
+                if (agents.length === 0) {
+                    grid.innerHTML = '<div class="col-span-full text-center text-white/30 font-mono text-sm py-20">No agents deployed. Create your first agent.</div>';
+                } else {
+                    grid.innerHTML = agents.map(a => {
+                        const task = a.data.tasks?.[0] || {};
+                        const llm = task.tools_config?.llm_agent?.llm_config || {};
+                        return `
+                            <div class="bg-surface border border-white/5 p-6 hover:border-eburon-bronze/50 transition-all group">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h4 class="font-display text-lg text-white">${a.data.agent_name || 'Unnamed'}</h4>
+                                    <span class="font-mono text-[8px] text-eburon-muted uppercase">${a.agent_id.substring(0, 8)}...</span>
+                                </div>
+                                <p class="text-[10px] text-white/40 mb-4 font-mono uppercase tracking-wider">
+                                    ${llm.provider || 'ollama'} / ${llm.model || 'unknown'}
+                                </p>
+                                <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="editAgent('${a.agent_id}')" class="flex-1 bg-eburon-gold text-obsidian py-2 font-mono text-[9px] uppercase font-bold">Edit</button>
+                                    <button onclick="startChatWithAgent('${a.agent_id}', '${a.data.agent_name}')" class="bg-white/10 text-white py-2 px-4 font-mono text-[9px] uppercase">Chat</button>
+                                    <button onclick="deleteAgent('${a.agent_id}')" class="bg-red-500/20 text-red-500 py-2 px-4 font-mono text-[9px] uppercase">Del</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // Update chat selector
+                const select = document.getElementById('chat-agent-select');
+                select.innerHTML = '<option value="">-- Select an agent --</option>' + 
+                    agents.map(a => `<option value="${a.agent_id}">${a.data.agent_name || a.agent_id.substring(0, 8)}</option>`).join('');
+            } catch (e) {
+                log('Failed to load agents: ' + e.message, 'error');
+            }
+        }
+
+        function editAgent(agentId) {
+            const agent = agents.find(a => a.agent_id === agentId);
+            if (!agent) return;
+            
+            const data = agent.data;
+            const task = data.tasks?.[0] || {};
+            const llm = task.tools_config?.llm_agent?.llm_config || {};
+            const synth = task.tools_config?.synthesizer?.provider_config || {};
+            const transcriber = task.tools_config?.transcriber || {};
+            
+            document.getElementById('agent-name').value = data.agent_name || '';
+            document.getElementById('agent-welcome').value = data.agent_welcome_message || '';
+            document.getElementById('agent-type').value = task.tools_config?.llm_agent?.agent_type || 'simple_llm_agent';
+            document.getElementById('task-type').value = task.task_type || 'conversation';
+            document.getElementById('execution-mode').value = task.toolchain?.execution || 'parallel';
+            
+            document.getElementById('llm-provider').value = llm.provider || 'ollama';
+            document.getElementById('llm-model').value = llm.model || 'qwen3.5';
+            document.getElementById('llm-url').value = llm.base_url || '';
+            document.getElementById('llm-temperature').value = llm.temperature || 0.3;
+            document.getElementById('llm-max-tokens').value = llm.max_tokens || 100;
+            document.getElementById('llm-top-p').value = llm.top_p || 0.9;
+            
+            document.getElementById('stt-provider').value = transcriber.provider || 'whisper';
+            document.getElementById('stt-model').value = transcriber.model || 'base';
+            document.getElementById('stt-language').value = transcriber.language || 'en';
+            document.getElementById('stt-endpointing').value = transcriber.endpointing || 400;
+            
+            document.getElementById('tts-provider').value = synth.provider || '';
+            document.getElementById('tts-voice').value = synth.model || 'nike';
+            document.getElementById('tts-voice-id').value = synth.voice || '';
+            document.getElementById('tts-sample-rate').value = synth.sampling_rate || 24000;
+            document.getElementById('tts-url').value = synth.base_url || '';
+            
+            if (task.task_config) {
+                document.getElementById('conv-silence-timeout').value = task.task_config.hangup_after_silence || 20;
+                document.getElementById('conv-max-duration').value = task.task_config.call_terminate || 300;
+                document.getElementById('conv-interrupt-words').value = task.task_config.number_of_words_for_interruption || 3;
+                document.getElementById('conv-incremental-delay').value = task.task_config.incremental_delay || 100;
+            }
+            
+            currentEditingAgentId = agentId;
+            showView('builder');
+            log('Editing agent: ' + data.agent_name);
+        }
+
+        async function createAgent() {
+            const name = document.getElementById('agent-name').value || 'Gregory Caenen';
+            const welcome = document.getElementById('agent-welcome').value || 'Dag! Hier Gregory Caenen. Fijn dat we elkaar gesproken hebben. Ik kijk ernaar uit u volgende week te ontmoeten bij project De Polder. Tot dan!';
+            const prompt = document.getElementById('agent-prompt').value || '[Identity]\nYou are Gregory Caenen, a worldly Belgian from the coast and CEO of Group Caenen...';
+            const agentType = document.getElementById('agent-type').value || 'simple_llm_agent';
+            const taskType = document.getElementById('task-type').value || 'conversation';
+            const executionMode = document.getElementById('execution-mode').value || 'parallel';
+
+            const llmProvider = document.getElementById('llm-provider').value;
+            const llmModel = document.getElementById('llm-model').value || 'qwen3.5';
+            const llmUrl = document.getElementById('llm-url').value;
+            const llmTemp = parseFloat(document.getElementById('llm-temperature')?.value) || 0.7;
+            const llmMaxTokens = parseInt(document.getElementById('llm-max-tokens')?.value) || 200;
+            const llmTopP = parseFloat(document.getElementById('llm-top-p')?.value) || 0.9;
+
+            const sttProvider = document.getElementById('stt-provider').value;
+            const sttModel = document.getElementById('stt-model').value || 'base';
+            const sttLanguage = document.getElementById('stt-language')?.value || 'nl';
+            const sttEndpointing = parseInt(document.getElementById('stt-endpointing')?.value) || 400;
+
+            const ttsProvider = document.getElementById('tts-provider').value;
+            const ttsVoice = document.getElementById('tts-voice').value || 'nike';
+            const ttsVoiceId = document.getElementById('tts-voice-id')?.value || ttsVoice;
+            const ttsSampleRate = parseInt(document.getElementById('tts-sample-rate')?.value) || 24000;
+            const ttsUrl = document.getElementById('tts-url').value;
+
+            // Conversation settings
+            const silenceTimeout = parseInt(document.getElementById('conv-silence-timeout')?.value) || 20;
+            const maxDuration = parseInt(document.getElementById('conv-max-duration')?.value) || 300;
+            const interruptWords = parseInt(document.getElementById('conv-interrupt-words')?.value) || 3;
+            const incrementalDelay = parseInt(document.getElementById('conv-incremental-delay')?.value) || 100;
+
+            // Build pipeline
+            const pipeline = [];
+            if (document.getElementById('pipe-transcriber').checked) pipeline.push('transcriber');
+            pipeline.push('llm');
+            if (document.getElementById('pipe-synthesizer').checked) pipeline.push('synthesizer');
+
+            const tools_config = {
+                llm_agent: {
+                    agent_type: agentType,
+                    agent_flow_type: "streaming",
+                    llm_config: {
+                        provider: llmProvider,
+                        model: llmModel,
+                        base_url: llmUrl || null,
+                        temperature: llmTemp,
+                        max_tokens: llmMaxTokens,
+                        top_p: llmTopP
+                    }
+                }
+            };
+
+            if (ttsProvider && pipeline.includes('synthesizer')) {
+                tools_config.synthesizer = {
+                    provider: ttsProvider,
+                    provider_config: {
+                        voice: ttsVoiceId,
+                        model: ttsVoice,
+                        base_url: ttsUrl || null,
+                        sampling_rate: ttsSampleRate
+                    },
+                    stream: true
+                };
+            }
+
+            if (sttProvider && pipeline.includes('transcriber')) {
+                tools_config.transcriber = {
+                    provider: sttProvider,
+                    model: sttModel,
+                    language: sttLanguage,
+                    endpointing: sttEndpointing,
+                    stream: true
+                };
+            }
+
+            const payload = {
+                agent_config: {
+                    agent_name: name,
+                    agent_welcome_message: welcome,
+                    tasks: [{
+                        task_type: taskType,
+                        task_config: {
+                            optimize_latency: true,
+                            hangup_after_silence: silenceTimeout,
+                            incremental_delay: incrementalDelay,
+                            call_terminate: maxDuration,
+                            number_of_words_for_interruption: interruptWords
+                        },
+                        toolchain: {
+                            execution: executionMode,
+                            pipelines: [pipeline]
+                        },
+                        tools_config: tools_config
+                    }]
+                },
+                agent_prompts: {}
+            };
+
+            try {
+                const isEditing = currentEditingAgentId !== null;
+                log((isEditing ? 'Updating' : 'Creating') + ' agent: ' + name);
+                const url = isEditing ? `${API}/agent/${currentEditingAgentId}` : `${API}/agent`;
+                const method = isEditing ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.agent_id) {
+                    log('Agent ' + (isEditing ? 'updated' : 'created') + ': ' + data.agent_id);
+                    showToast('Agent ' + (isEditing ? 'updated' : 'deployed') + ' successfully!');
+                    currentEditingAgentId = null;
+                    showView('agents');
+                }
+            } catch (e) {
+                log('Error saving agent: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteAgent(id) {
+            if (!confirm('Delete this agent?')) return;
+            try {
+                await fetch(`${API}/agent/${id}`, { method: 'DELETE' });
+                log('Agent deleted');
+                loadAgents();
+            } catch (e) {
+                log('Error deleting agent: ' + e.message, 'error');
+            }
+        }
+
+        function selectChatAgent() {
+            const select = document.getElementById('chat-agent-select');
+            const agent = agents.find(a => a.agent_id === select.value);
+            if (agent) {
+                document.getElementById('chat-agent-name').textContent = agent.data.agent_name || 'Agent';
+            }
+        }
+
+        function startChatWithAgent(agentId, agentName) {
+            document.getElementById('chat-agent-select').value = agentId;
+            document.getElementById('chat-agent-name').textContent = agentName;
+            showView('chat');
+        }
+
+        function toggleChat() {
+            const select = document.getElementById('chat-agent-select');
+            if (!select.value) {
+                alert('Please select an agent first');
+                return;
+            }
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+                return;
+            }
+            
+            connectWebSocket(select.value);
+        }
+
+        function connectWebSocket(agentId) {
+            if (ws) ws.close();
+            
+            const wsUrl = `ws://localhost:8080/chat/v1/${agentId}`;
+            ws = new WebSocket(wsUrl);
+            currentChatAgentId = agentId;
+
+            document.getElementById('ws-status').textContent = 'Connecting...';
+            document.getElementById('chat-connect-btn').textContent = 'Disconnect';
+            document.getElementById('chat-input').disabled = false;
+            document.getElementById('chat-send-btn').disabled = false;
+
+            ws.onopen = () => {
+                document.getElementById('ws-status').textContent = 'Connected';
+                document.getElementById('ws-status').classList.replace('text-white/40', 'text-green-500');
+                addChatMessage('system', 'Connected to agent. Type a message to begin.');
+                log('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    addChatMessage('agent', data.text || data.message || JSON.stringify(data));
+                    messageCount++;
+                    document.getElementById('stat-messages').textContent = messageCount;
+                } catch {
+                    addChatMessage('agent', event.data);
+                }
+            };
+
+            ws.onclose = () => {
+                document.getElementById('ws-status').textContent = 'Disconnected';
+                document.getElementById('ws-status').classList.replace('text-green-500', 'text-white/40');
+                document.getElementById('chat-connect-btn').textContent = 'Connect';
+                document.getElementById('chat-input').disabled = true;
+                document.getElementById('chat-send-btn').disabled = true;
+                addChatMessage('system', 'Disconnected from agent.');
+            };
+
+            ws.onerror = () => {
+                addChatMessage('system', 'Connection error');
+            };
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+            addChatMessage('user', text);
+            ws.send(JSON.stringify({ type: "text", data: text }));
+            input.value = '';
+        }
+
+        function addChatMessage(type, text) {
+            const div = document.getElementById('chat-messages');
+            if (div.querySelector('.text-center')) div.innerHTML = '';
+;
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex ${type === 'user' ? 'justify-end' : type === 'system' ? 'justify-center' : ''}`;
+            msgDiv.innerHTML = `
+                <div class="max-w-[70%] ${type === 'user' ? 'bg-eburon-gold text-obsidian' : type === 'system' ? 'text-white/40 text-xs font-mono' : 'bg-surface border border-white/10 text-eburon-sand'} p-4 rounded-sm text-sm">
+                    ${text}
+                </div>
+            `;
+            div.appendChild(msgDiv);
+            div.scrollTop = div.scrollHeight;
+        }
+
+        function saveSettings() {
+            showToast('Settings saved!');
+        }
+
+        function deployChanges() {
+            showToast('Deploying changes...');
+            log('Deploy triggered');
+        }
+
+        function copyWebhook() {
+            const url = document.getElementById('webhook-url').textContent;
+            navigator.clipboard.writeText(url);
+            showToast('Webhook URL copied!');
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Builder Multi-Step Functions
+        let currentBuilderStep = 1;
+        const totalSteps = 6;
+
+        function showBuilderStep(step) {
+            currentBuilderStep = step;
+            
+            // Update step buttons
+            for (let i = 1; i <= totalSteps; i++) {
+                const btn = document.getElementById(`step-btn-${i}`);
+                const content = document.getElementById(`builder-step-${i}`);
+                
+                if (i === step) {
+                    btn.classList.remove('bg-surface', 'border', 'border-white/10', 'text-white/40');
+                    btn.classList.add('bg-eburon-gold', 'text-obsidian');
+                    if (content) content.classList.remove('hidden');
+                } else {
+                    btn.classList.add('bg-surface', 'border', 'border-white/10', 'text-white/40');
+                    btn.classList.remove('bg-eburon-gold', 'text-obsidian');
+                    if (content) content.classList.add('hidden');
+                }
+            }
+
+            // Update navigation buttons
+            document.getElementById('builder-prev-btn').disabled = step === 1;
+            document.getElementById('builder-next-btn').textContent = step === totalSteps ? 'Deploy' : 'Next';
+            
+            // Update summary on step 6
+            if (step === 6) updateConfigSummary();
+            
+            // Update audio summary on step 4
+            if (step === 4) updateAudioSummary();
+        }
+
+        function nextBuilderStep() {
+            if (currentBuilderStep < totalSteps) {
+                showBuilderStep(currentBuilderStep + 1);
+            } else {
+                createAgent();
+            }
+        }
+
+        function prevBuilderStep() {
+            if (currentBuilderStep > 1) {
+                showBuilderStep(currentBuilderStep - 1);
+            }
+        }
+
+        function updateAudioSummary() {
+            document.getElementById('stt-summary').textContent = 
+                `${document.getElementById('stt-provider').value} / ${document.getElementById('stt-model').value || 'base'}`;
+            document.getElementById('llm-summary').textContent = 
+                `${document.getElementById('llm-provider').value} / ${document.getElementById('llm-model').value || 'qwen3.5'}`;
+            document.getElementById('tts-summary').textContent = 
+                `${document.getElementById('tts-provider').value} / ${document.getElementById('tts-voice').value || 'nike'}`;
+        }
+
+        function updateConfigSummary() {
+            const name = document.getElementById('agent-name').value || 'Unnamed Agent';
+            const taskType = document.getElementById('task-type').value;
+            const llmProvider = document.getElementById('llm-provider').value;
+            const llmModel = document.getElementById('llm-model').value || 'qwen3.5';
+            const pipeline = buildPipelineString();
+            
+            document.getElementById('summary-pipeline').textContent = pipeline;
+            document.getElementById('summary-task').textContent = taskType;
+            document.getElementById('summary-llm').textContent = `${llmProvider} / ${llmModel}`;
+            document.getElementById('summary-duration').textContent = 
+                `${document.getElementById('conv-max-duration').value || 300}s`;
+
+            document.getElementById('config-summary').innerHTML = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-[9px] text-white/30 uppercase mb-1">Agent Name</p>
+                        <p class="text-white/70">${name}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-white/30 uppercase mb-1">Task Type</p>
+                        <p class="text-white/70">${taskType}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-white/30 uppercase mb-1">LLM Provider</p>
+                        <p class="text-white/70">${llmProvider}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-white/30 uppercase mb-1">LLM Model</p>
+                        <p class="text-white/70">${llmModel}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-white/30 uppercase mb-1">STT Provider</p>
+                        <p class="text-white/70">${document.getElementById('stt-provider').value}</p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] text-white/30 uppercase mb-1">TTS Provider</p>
+                        <p class="text-white/70">${document.getElementById('tts-provider').value}</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-[9px] text-white/30 uppercase mb-1">Pipeline</p>
+                    <p class="text-eburon-gold">${pipeline}</p>
+                </div>
+            `;
+        }
+
+        function buildPipelineString() {
+            const steps = [];
+            if (document.getElementById('pipe-transcriber').checked) steps.push('transcriber');
+            if (document.getElementById('pipe-llm').checked) steps.push('llm');
+            if (document.getElementById('pipe-synthesizer').checked) steps.push('synthesizer');
+            return steps.join(' → ');
+        }
+
+        // Phone drag functionality
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let phoneMinimized = false;
+
+        function initPhoneDrag() {
+            const phoneHeader = document.getElementById('phone-header');
+            if (!phoneHeader) return;
+
+            phoneHeader.addEventListener('mousedown', startDrag);
+            phoneHeader.addEventListener('touchstart', startDrag, { passive: false });
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function startDrag(e) {
+            if (e.target.closest('button')) return;
+            
+            isDragging = true;
+            const phone = document.getElementById('simulator');
+            const rect = phone.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            dragOffset.x = clientX - rect.left;
+            dragOffset.y = clientY - rect.top;
+            
+            phone.style.transition = 'none';
+            phone.style.cursor = 'grabbing';
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const phone = document.getElementById('simulator');
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const newX = clientX - dragOffset.x;
+            const newY = clientY - dragOffset.y;
+            
+            const maxX = window.innerWidth - 288;
+            const maxY = window.innerHeight - 500;
+            
+            phone.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+            phone.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+            phone.style.right = 'auto';
+            phone.style.bottom = 'auto';
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            const phone = document.getElementById('simulator');
+            if (phone) {
+                phone.style.transition = '';
+                phone.style.cursor = '';
+            }
+        }
+
+        function togglePhone() {
+            const phone = document.getElementById('simulator');
+            phoneMinimized = !phoneMinimized;
+            
+            if (phoneMinimized) {
+                phone.innerHTML = `
+                    <button onclick="togglePhone()" class="w-14 h-14 bg-eburon-gold rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] hover:scale-110 transition-all cursor-move">
+                        <i class="fas fa-phone text-obsidian text-lg"></i>
+                    </button>
+                `;
+            } else {
+                // Restore full phone UI
+                phone.innerHTML = `
+                    <div class="bg-surface border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_50px_rgba(212,175,55,0.1)] overflow-hidden w-72" id="phone-container">
+                        <div id="phone-header" class="bg-obsidian border-b border-white/5 px-4 py-3 flex items-center justify-between cursor-move">
+                            <span id="phone-status" class="font-mono text-[9px] text-green-500 uppercase tracking-widest">Ready</span>
+                            <span class="font-mono text-[9px] text-white/30">Eburon Edge</span>
+                            <button onclick="togglePhone()" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all">
+                                <i class="fas fa-minus text-[8px] text-white/60"></i>
+                            </button>
+                        </div>
+                        <div class="bg-carbon p-5 text-center min-h-[120px] flex flex-col justify-center">
+                            <div id="phone-number" class="font-mono text-2xl text-white tracking-wider mb-2"></div>
+                            <div id="phone-duration" class="font-mono text-[10px] text-white/40">00:00</div>
+                            <div id="phone-state" class="font-mono text-[10px] text-eburon-gold mt-2 uppercase tracking-widest">Idle</div>
+                        </div>
+                        <div id="audio-viz" class="bg-carbon border-t border-white/5 px-5 py-3 hidden">
+                            <div class="flex justify-center items-end gap-1 h-8">
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:4px;animation-delay:0s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:8px;animation-delay:0.1s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:12px;animation-delay:0.2s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:6px;animation-delay:0.3s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:10px;animation-delay:0.4s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:4px;animation-delay:0.5s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:14px;animation-delay:0.6s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:8px;animation-delay:0.7s"></div>
+                                <div class="w-1 bg-eburon-gold/30 rounded-full audio-bar" style="height:4px;animation-delay:0.8s"></div>
+                            </div>
+                        </div>
+                        <div class="bg-surface p-4">
+                            <div class="grid grid-cols-3 gap-2 mb-4">
+                                <button onclick="dialDigit('1')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">1</button>
+                                <button onclick="dialDigit('2')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">2<span class="text-[8px] text-white/30">ABC</span></button>
+                                <button onclick="dialDigit('3')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">3<span class="text-[8px] text-white/30">DEF</span></button>
+                                <button onclick="dialDigit('4')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">4<span class="text-[8px] text-white/30">GHI</span></button>
+                                <button onclick="dialDigit('5')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">5<span class="text-[8px] text-white/30">JKL</span></button>
+                                <button onclick="dialDigit('6')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">6<span class="text-[8px] text-white/30">MNO</span></button>
+                                <button onclick="dialDigit('7')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">7<span class="text-[8px] text-white/30">PQRS</span></button>
+                                <button onclick="dialDigit('8')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">8<span class="text-[8px] text-white/30">TUV</span></button>
+                                <button onclick="dialDigit('9')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">9<span class="text-[8px] text-white/30">WXYZ</span></button>
+                                <button onclick="dialDigit('*')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">*</button>
+                                <button id="dial-zero" onmousedown="startPlusHold()" onmouseup="endPlusHold()" ontouchstart="startPlusHold()" ontouchend="endPlusHold()" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">0<span class="text-[8px] text-white/30">+</span></button>
+                                <button onclick="dialDigit('#')" class="keypad-btn bg-obsidian border border-white/10 rounded-xl py-3 text-lg font-light text-white hover:bg-white/10 transition-all">#</button>
+                            </div>
+                            <div class="flex gap-3">
+                                <button id="call-btn" onclick="toggleCall()" class="flex-1 bg-green-600 text-white py-4 rounded-full flex items-center justify-center gap-2 hover:bg-green-500 transition-all">
+                                    <i class="fas fa-phone"></i>
+                                </button>
+                                <button onclick="endCall()" id="hangup-btn" class="flex-1 bg-red-600 text-white py-4 rounded-full flex items-center justify-center gap-2 hover:bg-red-500 transition-all hidden">
+                                    <i class="fas fa-phone-slash"></i>
+                                </button>
+                                <button onclick="clearDial()" class="w-14 bg-obsidian border border-white/10 text-white/60 py-4 rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
+                                    <i class="fas fa-backspace"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // Re-initialize drag after restoring
+                setTimeout(initPhoneDrag, 50);
+            }
+        }
+
+        // Initialize phone drag after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initPhoneDrag);
+        } else {
+            initPhoneDrag();
+        }
+
+        function dialDigit(digit) {
+            if (callActive) return;
+            if (dialedNumber.length < 15) {
+                dialedNumber += digit;
+                updatePhoneDisplay();
+            }
+        }
+
+        let plusHoldTimer = null;
+        let isLongPress = false;
+        const PLUS_HOLD_DELAY = 500; // ms to hold for plus
+
+        function startPlusHold() {
+            isLongPress = false;
+            plusHoldTimer = setTimeout(() => {
+                isLongPress = true;
+                dialedNumber += '+';
+                updatePhoneDisplay();
+                // Visual feedback
+                const btn = document.getElementById('dial-zero');
+                btn.classList.add('bg-eburon-gold', 'text-obsidian');
+            }, PLUS_HOLD_DELAY);
+        }
+
+        function endPlusHold() {
+            if (plusHoldTimer) {
+                clearTimeout(plusHoldTimer);
+                plusHoldTimer = null;
+            }
+            // Remove visual feedback
+            const btn = document.getElementById('dial-zero');
+            btn.classList.remove('bg-eburon-gold', 'text-obsidian');
+            
+            // If wasn't a long press, dial 0
+            if (!isLongPress) {
+                dialDigit('0');
+            }
+            isLongPress = false;
+        }
+
+        function updatePhoneDisplay() {
+            const display = document.getElementById('phone-number');
+            if (dialedNumber.length === 0) {
+                display.textContent = '';
+            } else {
+                // Format as phone number
+                let formatted = dialedNumber;
+                if (dialedNumber.length > 3) {
+                    formatted = dialedNumber.substring(0, 3) + ' ' + dialedNumber.substring(3);
+                }
+                if (dialedNumber.length > 6) {
+                    formatted = formatted.substring(0, 6) + ' ' + dialedNumber.substring(6);
+                }
+                display.textContent = '+1 ' + formatted;
+            }
+        }
+
+        function clearDial() {
+            if (callActive) return;
+            dialedNumber = dialedNumber.slice(0, -1);
+            updatePhoneDisplay();
+        }
+
+        function toggleCall() {
+            if (callActive) {
+                endCall();
+            } else {
+                startCall();
+            }
+        }
+
+        function startCall() {
+            if (dialedNumber.length === 0) {
+                dialedNumber = '15550000000'; // Default test number
+            }
+            
+            callActive = true;
+            callStartTime = Date.now();
+            
+            // Update UI
+            document.getElementById('call-btn').classList.add('hidden');
+            document.getElementById('hangup-btn').classList.remove('hidden');
+            document.getElementById('phone-status').textContent = 'Connected';
+            document.getElementById('phone-status').classList.replace('text-green-500', 'text-eburon-gold');
+            document.getElementById('phone-state').textContent = 'Connected';
+            document.getElementById('audio-viz').classList.remove('hidden');
+            
+            // Start duration timer
+            durationInterval = setInterval(updateDuration, 1000);
+            
+            // Activate audio bars
+            document.querySelectorAll('.audio-bar').forEach(bar => {
+                bar.classList.remove('bg-eburon-gold/30');
+                bar.classList.add('bg-eburon-gold');
+            });
+            
+            log(`Call started: +1 ${dialedNumber}`);
+            showToast('Call connected via WebRTC');
+        }
+
+        function endCall() {
+            callActive = false;
+            
+            if (durationInterval) {
+                clearInterval(durationInterval);
+                durationInterval = null;
+            }
+            
+            // Update UI
+            document.getElementById('call-btn').classList.remove('hidden');
+            document.getElementById('hangup-btn').classList.add('hidden');
+            document.getElementById('phone-status').textContent = 'Ready';
+            document.getElementById('phone-status').classList.replace('text-eburon-gold', 'text-green-500');
+            document.getElementById('phone-state').textContent = 'Idle';
+            document.getElementById('phone-duration').textContent = '00:00';
+            document.getElementById('audio-viz').classList.add('hidden');
+            
+            // Deactivate audio bars
+            document.querySelectorAll('.audio-bar').forEach(bar => {
+                bar.classList.add('bg-eburon-gold/30');
+                bar.classList.remove('bg-eburon-gold');
+            });
+            
+            log('Call ended');
+        }
+
+        function updateDuration() {
+            if (!callStartTime) return;
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const secs = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('phone-duration').textContent = `${mins}:${secs}`;
+        }
+
+        // Update pipeline preview when checkboxes change
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = ['pipe-transcriber', 'pipe-llm', 'pipe-synthesizer'];
+            checkboxes.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => {
+                        document.getElementById('pipeline-preview').textContent = buildPipelineString();
+                    });
+                }
+            });
+        });
+
+        // Init
+        checkServices();
+        loadAgents();
+        setInterval(checkServices, 15000);
+        setInterval(loadAgents, 30000);
+
+        // Auto-detect local services
+        async function detectLocalServices() {
+            const llmProvider = document.getElementById('llm-provider');
+            const llmModel = document.getElementById('llm-model');
+            const llmUrl = document.getElementById('llm-url');
+            const ttsProvider = document.getElementById('tts-provider');
+            const ttsVoice = document.getElementById('tts-voice');
+            const ttsVoiceId = document.getElementById('tts-voice-id');
+            const ttsUrl = document.getElementById('tts-url');
+            const sttProvider = document.getElementById('stt-provider');
+            const sttModel = document.getElementById('stt-model');
+
+            // Detect Ollama (LLM)
+            try {
+                const res = await fetch('http://localhost:11434/api/tags');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.models && data.models.length > 0) {
+                        // Ollama is running, set defaults
+                        llmProvider.value = 'ollama';
+                        llmUrl.value = 'http://localhost:11434/v1';
+                        llmModel.value = data.models[0].name;
+                    }
+                }
+            } catch {}
+
+            // Detect Eburon Edge Voice (TTS)
+            try {
+                const res = await fetch('http://localhost:17493/generate', { method: 'HEAD' });
+                if (res.ok || res.status === 405) {
+                    ttsProvider.value = 'eburon_edge';
+                    ttsUrl.value = 'http://localhost:17493';
+                    ttsVoice.value = 'nike';
+                    ttsVoiceId.value = 'ep_001';
+                }
+            } catch {}
+
+            // Detect Whisper (STT) - no API, just set defaults
+            sttProvider.value = 'whisper';
+            sttModel.value = 'base';
+        }
+
+        // Override showView to detect services when builder is shown
+        const originalShowView = showView;
+        showView = function(viewId) {
+            originalShowView(viewId);
+            if (viewId === 'builder') {
+                setTimeout(detectLocalServices, 100);
+            }
+        };
+
+        // Initial detection on page load
+        detectLocalServices();
+    </script>
+</body>
+</html>

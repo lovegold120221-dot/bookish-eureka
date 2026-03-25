@@ -1,0 +1,64 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eburon"
+version = "0.10.1"
+readme = "README.md"
+authors = [
+    { name = "Prateek Sachan", email = "ps@prateeksachan.com" }
+]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+dynamic = ["dependencies"]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = ["pip-tools", "pytest", "pytest-asyncio", "ruff"]
+
+[tool.setuptools]
+package-dir = {"eburon" = "eburon"}
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+# Start minimal, grow over time. Uncomment rules as the codebase is cleaned up.
+# Roadmap: F541 → UP → F401 → F841 → I (isort) → E (pycodestyle)
+select = [
+    "E721",  # type comparison (use isinstance)
+    "F811",  # redefined unused name
+    "ISC",   # implicit string concatenation bugs
+]
+
+[tool.bumpver]
+current_version = "0.10.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump eburon version {old_version} -> {new_version}"
+tag_message = "eburon-{new_version}"
+tag_scope = "default"
+pre_commit_hook = ""
+post_commit_hook = ""
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+    'version = "{version}"',
+]
+"eburon/__init__.py" = [
+    '^__version__ = "{version}"$',
+]
